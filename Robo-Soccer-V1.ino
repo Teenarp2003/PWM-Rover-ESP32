@@ -9,7 +9,7 @@
 #define pwmAR 32
 #define pwmB 5
 #define pwmBR 4
-#define pfreq 5000
+#define pfreq 1000
 
 int MotorSpeedA = 0;
 int MotorSpeedB = 0;
@@ -19,24 +19,23 @@ int rcCH1, rcCH2, rcCH3, rcCH4, rcCH5, rcCH6;
 
 void mControlA(int mspeed, int mdir) {
   if (mdir == 0) {
-    analogWriteFrequency(pwmA, pfreq);
+    analogWriteFrequency(pwmA, pfreq+(mspeed*8));
     analogWrite(pwmA, mspeed);
-    analogWriteFrequency(pwmAR, pfreq);
+    analogWriteFrequency(pwmAR, pfreq+(mspeed*8));
     analogWrite(pwmAR, 0 );
     
     Serial.print("|| A - forward ");
   } else if (mdir == 1) {
     // Motor forward
-    analogWriteFrequency(pwmAR, pfreq);
+    analogWriteFrequency(pwmAR, pfreq+(mspeed*8));
     analogWrite(pwmAR, mspeed);
-    analogWriteFrequency(pwmA, pfreq);
+    analogWriteFrequency(pwmA, pfreq+(mspeed*8));
     analogWrite(pwmA, 0);
     Serial.print("|| A - backward ");
-  }
-  else{
-    analogWriteFrequency(pwmAR, pfreq);
+  } else{
+    analogWriteFrequency(pwmAR, pfreq+(mspeed*8));
     analogWrite(pwmAR,0);
-    analogWriteFrequency(pwmA, pfreq);
+    analogWriteFrequency(pwmA, pfreq+(mspeed*8));
     analogWrite(pwmA, 0);
   }
 }
@@ -45,21 +44,21 @@ void mControlB(int mspeed, int mdir) {
   if (mdir == 0) {
     // Motor backward
     Serial.print("|| B - forward || ");
-    analogWriteFrequency(pwmB, pfreq);
+    analogWriteFrequency(pwmB, pfreq+(mspeed*8));
     analogWrite(pwmB, mspeed);
-    analogWriteFrequency(pwmBR, pfreq);
+    analogWriteFrequency(pwmBR, pfreq+(mspeed*8));
     analogWrite(pwmBR, 0);
   } else if (mdir == 1) {
     // Motor forward
-    analogWriteFrequency(pwmBR, 2000);
+    analogWriteFrequency(pwmBR, pfreq+(mspeed*8));
     analogWrite(pwmBR, mspeed);
-    analogWriteFrequency(pwmB, 2000);
+    analogWriteFrequency(pwmB, pfreq+(mspeed*8));
     analogWrite(pwmB, 0);
     Serial.print("|| B - backward || ");
   } else{
-    analogWriteFrequency(pwmBR, pfreq);
+    analogWriteFrequency(pwmBR, pfreq+(mspeed*8));
     analogWrite(pwmBR,0);
-    analogWriteFrequency(pwmB, pfreq);
+    analogWriteFrequency(pwmB, pfreq+(mspeed*8));
     analogWrite(pwmB, 0);
   }
 }
@@ -116,28 +115,41 @@ void loop() {
 
   Serial.print(" Ch6 = ");
   Serial.print(rcCH6);
-  if (rcCH2 > 0) {
+  if (rcCH2 > 10) {
     MotorDirA = 0;
     MotorDirB = 0;
-  } else if ( rcCH2 < 0){
+  } else if ( rcCH2 < -10){
     MotorDirA = 1;
     MotorDirB = 1;
   }
+  else if(rcCH1 > 0 && rcCH2 < 10 && rcCH2 > -10){
+    MotorDirA = 0;
+    MotorDirB = 1;
+  }
+  else if(rcCH1 < 0 && rcCH2 < 10 && rcCH2 > -10){
+    MotorDirA = 1;
+    MotorDirB = 0;
+  }
   
-  if (rcCH1 >= 10 || rcCH2 >= 10 || rcCH1 <= -10 || rcCH2 <= -10 ){
+  if (rcCH2 >= 10 || rcCH2 <= -10 ){
     if(rcCH5 > 10){
       MotorSpeedA = rcCH3 + abs(rcCH2);
       MotorSpeedB = rcCH3 + abs(rcCH2);
-      // Set left/right offset with channel 1 value
       MotorSpeedA += rcCH1;
       MotorSpeedB -= rcCH1;
+    }
+  }
+  else if (rcCH2 < 10 && rcCH2 > -10){
+    if(rcCH5> 10){
+      MotorSpeedA = rcCH3 + abs(rcCH1);
+      MotorSpeedB = rcCH3 + abs(rcCH1);
     }
   }
   else{
     MotorSpeedA = 0;
     MotorSpeedB = 0;
   }
-  // Ensure that speeds are between 0 and 255
+  // Ensure that speeds are between 0 and 253
   MotorSpeedA = constrain(MotorSpeedA, 0, 253);
   MotorSpeedB = constrain(MotorSpeedB, 0, 253);
 
